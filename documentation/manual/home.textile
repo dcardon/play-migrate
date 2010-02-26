@@ -1,9 +1,8 @@
 h1. Migrate module
 
-p. The migrate module helps you manage versions of your database.  
-If you're familiar with "Ruby On Rails data migration":http://api.rubyonrails.org/classes/ActiveRecord/Migration.html, 
-this module is similar to that.  Essentially, the purpose of this module is to provide a useful way to
-track and manage the version of one or more databases during the development process.
+The migrate module helps you manage versions of your database.
+
+If you're familiar with "Ruby On Rails data migration":http://api.rubyonrails.org/classes/ActiveRecord/Migration.html, this module is similar to that.  Essentially, the purpose of this module is to provide a useful way to track and manage the version of one or more databases during the development process.
 
 h2. <a>Enable the migrate module for the application</a>
 
@@ -84,4 +83,8 @@ To run your database creation script, use the **play migrate:create** command.  
 
 To bring your database(s) to their most recent patch version(s), use the **play migrate:up** command.
 
+h2. <a>Other commands</a>
+
 You can see your database(s) current version number(s) and status(es) with the **play migrate:version** command.
+
+You can create a skeleton directory structure (with example files) with the **play migrate:init** command.
