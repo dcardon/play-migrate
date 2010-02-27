@@ -8,8 +8,14 @@ h2. <a>Enable the migrate module for the application</a>
 
 In the **/conf/application.conf** file, you need a line to add the module to your project:
 
-bc. # The DB module
-module.pdf=${play.path}/modules/migrate
+bc. # The migrate module
+module.migrate=${play.path}/modules/migrate
+
+h3. <a>Migrate vs. jpa.ddl=update</a>
+
+In addition to enabling the migrate module, you might want to consider check your **jpa.ddl** configuration setting and make sure it is set to either **jpa.ddl=validate** or **jpa.ddl=none**; otherwise, JPA will modify your database schema based on your models.
+
+Generally, if you're just at the start of a project, it's probably best to just use the **jpa.ddl=update** setting and not bother with the migrate module.  However, migrate really offers a lot of advantages over **jpa.ddl* once your project matures a little (e.g., populating your database with metadata, transforming existing operational data into new structures, etc.)  
 
 h2. <a>Configuration</a>
 
