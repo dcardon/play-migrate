@@ -83,6 +83,10 @@ To run your database creation script, use the **play migrate:create** command.  
 
 To bring your database(s) to their most recent patch version(s), use the **play migrate:up** command.
 
+h2. <a>Starting fresh</a>
+
+Sometimes during early development, it's useful to start with a clean database (this is also often nice during tests).  You drop all of your databases, create new ones and migrate to the most recent database version in one command: **play migrate:drop-rebuild** command.
+
 h2. <a>Other commands</a>
 
 You can see your database(s) current version number(s) and status(es) with the **play migrate:version** command.

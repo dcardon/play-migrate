@@ -119,8 +119,9 @@ def getMigrateFiles(dbname, exclude_before):
 		
 	return [maxindex, return_obj]
 
-# ~~~~~~~~~~~~~~~~~~~~~~ [migrate:create] Create the initial database
-if play_command == 'migrate:create':
+
+# ~~~~~~~~~~~~~~~~~~~~~~ Runs the database creation script
+def create():
 	try:
 		# The format string for running commands through a file
 		db_format_string = readConf('migrate.module.file.format')
@@ -165,10 +166,10 @@ if play_command == 'migrate:create':
 	print "~ "
 	print "~ Database creation script completed."
 	print "~ "
-	sys.exit(0)
 	
-# ~~~~~~~~~~~~~~~~~~~~~~ [migrate:up] Migrate the database from it's current version to another version
-if play_command == 'migrate:up':
+	
+# ~~~~~~~~~~~~~~~~~~~~~~ Performs the up migration task
+def up():
 	# The format string we'll use to run DB commands
 	db_format_string = readConf('migrate.module.file.format')
 	
@@ -218,6 +219,40 @@ if play_command == 'migrate:up':
 		print "~ ------------------------------------"
 		print "~ "
 		
+# ~~~~~~~~~~~~~~~~~~~~~~ Drops all databases
+def dropAll():
+	db_list = readConf('migrate.module.dbs').split(',')
+	print "~ "
+	print "~ Dropping databases..."
+	for db in db_list:
+		print "~    drop %(db)s" % {'db':db}
+		[tmp_path,f] = createTempFile('migrate.module/drop_db.sql')
+		f.write("drop database %(db)s;" %{ 'db':db })
+		f.close()
+		
+		# The format string for running commands through a file
+		db_format_string = readConf('migrate.module.file.format')
+		command_strings = getCommandStrings()
+		command_strings['filename'] = tmp_path
+		command_strings['dbname'] = db
+		db_cmd = db_format_string % command_strings
+		
+		[code, response] = runDBCommand(db_cmd)
+		if code <> 0:
+			print "Failure " + response
+			sys.exit(-1)
+	print "~ "
+	print "~ Database drop completed"
+	print "~ "
+
+# ~~~~~~~~~~~~~~~~~~~~~~ [migrate:create] Create the initial database
+if play_command == 'migrate:create':
+	create()
+	sys.exit(0)
+	
+# ~~~~~~~~~~~~~~~~~~~~~~ [migrate:up] Migrate the database from it's current version to another version
+if play_command == 'migrate:up':
+	up()
 	sys.exit(0)
 
 # ~~~~~~~~~~~~~~~~~~~~~~ [migrate:version] Output the current version(s) of the datbase(s)
@@ -239,6 +274,13 @@ if play_command == 'migrate:init':
 	override('db/migrate/db1/1.up.create_user.sql', 'db/migrate/db1/1.up.create_user.sql')
 	print "~ "
 	sys.exit(0)
+
+# ~~~~~~~~~~~~~~~~~~~~~~ [migrate:init] Build the initial / example files for the migrate module
+if play_command == 'migrate:drop-rebuild':
+	dropAll()
+	create()
+	up()
+	sys.exit(0)
 	
 if play_command.startswith('migrate:'):
 	print "~ Database migration module "
@@ -247,6 +289,7 @@ if play_command.startswith('migrate:'):
 	print "~      migrate:up to migrate your database up" 
 	print "~      migrate:version to read the current version of the database" 
 	print "~      migrate:init to set up some initial database migration files" 
+	print "~      migrate:drop-rebuild to drop and then rebuild all databases (use with caution!)"
 	print "~ "
 	
 	sys.exit(0)
