@@ -63,7 +63,7 @@ Migrate processes two types of files: a single **create** script and multiple **
   
   These scripts are stored in your play application's folder like this:
   
-bc.  + playapp/
+bc.  : playapp/
  |- + db/
     |- + migrate/
 	   |-   create.sql
@@ -74,6 +74,7 @@ bc.  + playapp/
 	      |- 3.up.add_password_to_user.sql  
 	   |- + db2/
 	      |- 1.up.create_foobar.sql
+
 
 Run **play migrate:init** from the command line to build a skeletal directory structure and some example scripts. 
 
@@ -91,7 +92,7 @@ To bring your database(s) to their most recent patch version(s), use the **play 
 
 h2. <a>Starting fresh</a>
 
-Sometimes during early development, it's useful to start with a clean database (this is also often nice during tests).  You drop all of your databases, create new ones and migrate to the most recent database version in one command: **play migrate:drop-rebuild** command.
+Sometimes during early development, it's useful to start with a clean database (this is also often nice during tests).  You can drop all of your databases, create new ones and migrate to the most recent database version in one command: **play migrate:drop-rebuild** command.
 
 h2. <a>Other commands</a>
 
