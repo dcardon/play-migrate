@@ -39,7 +39,7 @@ def updateVersionTo(dbname,version):
 	[code, response] = runDBCommand(db_cmd)
 	if code <> 0:
 		print "~ ERROR updating version number: "
-		print "    " + response
+		print "	" + response
 		sys.exit(-1)
 		
 # ~~~~~~~~~~~~~~~~~~~~~~ updateStatusTo(dbname,status) updates the status in the passed database
@@ -58,7 +58,7 @@ def updateStatusTo(dbname,status):
 	[code, response] = runDBCommand(db_cmd)
 	if code <> 0:
 		print "~ ERROR updating status: "
-		print "~    " + response
+		print "~	" + response
 		sys.exit(-1)
 		
 	
@@ -94,7 +94,7 @@ def runDBCommand(command):
 				
 	except OSError:
 		print "Could not execute the database create script: " 
-		print "    " + command
+		print "	" + command
 		returncode = -1
 	
 	return [returncode,line]
@@ -103,20 +103,56 @@ def runDBCommand(command):
 # ~~~~~~~~~~~~~~~~~~~~~~ {playapp}/db/migrate/{dbname} folder and follow a naming convention: {number}.{up|down}.{whatever}.sql
 def getMigrateFiles(dbname, exclude_before):
 	search_path = os.path.join(application_path, 'db/migrate/',dbname + '/*up*.sql')
-	
+
 	initial_list = glob.glob(search_path)
 	return_obj = {}
+	collisions = []
 	# Filter the list to only the specified pattern
 	pat = re.compile('(\d+)\.(up|down).*\.sql\Z')
 	maxindex = 0
 	for file in initial_list:
 		match = re.search(pat,file)
 		index = int(match.group(1))
+		if index in return_obj:
+			collisions.append("" + return_obj[index] + "  <==>  " + file)
 		if match != None and index > exclude_before:
 			return_obj[index] = file
 		if match != None and index > maxindex:
 			maxindex = index
+			
+	# Check for collisions
+	if len(collisions) > 0:
+		print "~"
+		print "~ ======================================================================================================"
+		print "~ "
+		print "~  ERROR:  Migrate collisions detected.  Please resolve these, then try again"
+		print "~"
+		print "~  Collision list:"
+		for item in collisions:
+			print "~         " + item
+		print "~"
+		print "~"
+		sys.exit(-1)
 		
+	# Check for gaps
+	missed = []
+	for idx in range((exclude_before + 1),maxindex):
+		if idx not in return_obj:
+			missed.append(idx)
+	
+	if len(missed) > 0:
+		print "~"
+		print "~ ======================================================================================================"
+		print "~ "
+		print "~  ERROR:  Migrate file gaps detected.  Please resolve these, then try again"
+		print "~"
+		print "~  Files at the following levels are missing:"
+		for idx in missed:
+			print "~      %s" % idx
+		print "~"
+		print "~"
+		sys.exit(-1)
+			
 	return [maxindex, return_obj]
 
 
@@ -131,7 +167,7 @@ def create():
 			if not os.path.exists(createpath):
 				print "~ "
 				print "~ Unable to find create script"
-				print "~    Please place your database creation script in db/migrate/create.sql"
+				print "~	Please place your database creation script in db/migrate/create.sql"
 				print "~ "
 				sys.exit(-1)
 		else:
@@ -150,7 +186,7 @@ def create():
 		if code <> 0:
 			print "~ " + str(code)
 			print "~ ERROR: could not execute the database create script: "
-			print "~     " + db_create_cmd
+			print "~	 " + db_create_cmd
 			print "~ "
 			print "~ Process response: " + response
 			print "~ "
@@ -179,24 +215,24 @@ def up():
 	print "~ Database migration:"
 	print "~ "
 	for db in db_list:
-		print "~    Database: %(db)s" % {'db':db}
+		print "~	Database: %(db)s" % {'db':db}
 		[version,status] = getVersion(db)
-		print "~    Version: %(version)s" % {'version': version}
-		print "~    Status: %(status)s" % {'status': status}
+		print "~	Version: %(version)s" % {'version': version}
+		print "~	Status: %(status)s" % {'status': status}
 		[maxindex, files_obj] = getMigrateFiles(db,int(version))
-		print "~    Max patch version: " + str(maxindex)
+		print "~	Max patch version: " + str(maxindex)
 		print "~ "
 		if maxindex <= int(version):
-			print "~    " + db + " is up to date."
+			print "~	" + db + " is up to date."
 			print "~ "
-			print "~ "    
+			print "~ "	
 			continue
-		print "~    Migrating..."
+		print "~	Migrating..."
 		command_strings = getCommandStrings()
 		for i in range(int(version) + 1, maxindex + 1):
 			# Skip missed files
 			if files_obj[i] == None:
-				print "~      Patch " + str(i) + " is missing...skipped"
+				print "~	  Patch " + str(i) + " is missing...skipped"
 				continue
 				
 			command_strings['filename'] = files_obj[i]
@@ -206,15 +242,15 @@ def up():
 			[code, response] = runDBCommand(db_cmd)
 			if code <> 0:
 				print "~  Migration failed on patch " + str(i) + "!"
-				print "~    ERRROR message: " + response
+				print "~	ERRROR message: " + response
 				updateStatusTo(db,response)
 				
 				sys.exit(-1)
-			print "~      " + str(i) + "..."
+			print "~	  " + str(i) + "..."
 		
 			updateVersionTo(db,i)
 		print "~ "
-		print "~    Migration completed successfully"
+		print "~	Migration completed successfully"
 		print "~ "
 		print "~ ------------------------------------"
 		print "~ "
@@ -225,7 +261,7 @@ def dropAll():
 	print "~ "
 	print "~ Dropping databases..."
 	for db in db_list:
-		print "~    drop %(db)s" % {'db':db}
+		print "~	drop %(db)s" % {'db':db}
 		[tmp_path,f] = createTempFile('migrate.module/drop_db.sql')
 		f.write("drop database %(db)s;" %{ 'db':db })
 		f.close()
@@ -286,10 +322,10 @@ if play_command.startswith('migrate:'):
 	print "~ Database migration module "
 	print "~  "
 	print "~ Use: migrate:create to create your initial database" 
-	print "~      migrate:up to migrate your database up" 
-	print "~      migrate:version to read the current version of the database" 
-	print "~      migrate:init to set up some initial database migration files" 
-	print "~      migrate:drop-rebuild to drop and then rebuild all databases (use with caution!)"
+	print "~	  migrate:up to migrate your database up" 
+	print "~	  migrate:version to read the current version of the database" 
+	print "~	  migrate:init to set up some initial database migration files" 
+	print "~	  migrate:drop-rebuild to drop and then rebuild all databases (use with caution!)"
 	print "~ "
 	
 	sys.exit(0)

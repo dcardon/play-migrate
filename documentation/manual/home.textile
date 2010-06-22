@@ -60,10 +60,10 @@ Make sure that the command (i.e., 'mysql' or 'psql') is available on your system
 h2. <a>Writing patch files</a>
 
 Migrate processes two types of files: a single **create** script and multiple **patch** scripts.  The create script is named **create.sql** and is only run to generate your database(s) initially.  The patch scripts are named according to this pattern: [version number].['up' or 'down'].[description].sql  
-  
-  These scripts are stored in your play application's folder like this:
-  
-bc.  : playapp/
+
+These scripts are stored in your play application's folder like this:
+
+bc.    playapp/ 
  |- + db/
     |- + migrate/
 	   |-   create.sql
