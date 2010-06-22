@@ -82,7 +82,8 @@ The **create.sql** file contains the instructions to create all of your database
  
 The patch scripts identify a version number for their contents as well as the direction of the patch.  The **up** patches are used to bring the database version from its previous version up to the version of the patch (e.g., if the database's current version is 12, patch 13.up.xxx.sql will bring the database to version 13).  The **down** patches remove the changes of the corresponding __up__ patch, bringing the database to the previous version.  
  
- *NOTE: code to run 'down' patches is not implemented in this version of the migrate module!*
+NOTE: code to run 'down' patches is not implemented in this version of the migrate module!
+
  
 h2. <a>Running the patch files</a>
 
@@ -90,9 +91,11 @@ To run your database creation script, use the **play migrate:create** command.  
 
 To bring your database(s) to their most recent patch version(s), use the **play migrate:up** command.
 
+
 h2. <a>Starting fresh</a>
 
 Sometimes during early development, it's useful to start with a clean database (this is also often nice during tests).  You can drop all of your databases, create new ones and migrate to the most recent database version in one command: **play migrate:drop-rebuild** command.
+
 
 h2. <a>Other commands</a>
 
