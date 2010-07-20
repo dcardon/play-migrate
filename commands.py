@@ -1,4 +1,5 @@
 import glob
+import re
 
 # Migrate - database migration and creation
 
@@ -155,32 +156,43 @@ def getMigrateFiles(dbname, exclude_before):
 			
 	return [maxindex, return_obj]
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ extracts the database and its alias from the passed database name.
+def extractDatabaseAndAlias(db):
+	db = db.strip()
+		
+	# See if there's an alias.
+	match = re.search('(\w+)\[(\w+)]',db);
+	if match == None:
+		db_alias = db;
+		db_alias_name = 'None';
+	else:
+		db_alias = match.group(2);
+		db_alias_name = db_alias;
+		db = match.group(1);
+		
+	return [db,db_alias,db_alias_name]
+	
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ interpolates the creation file with the passed database name.
+def interpolateDBFile(db, createpath):
+	[tmp_path,f] = createTempFile('migrate.module/temp_create_%(db)s.sql' % {'db': db})
+	print "~ Creating temp file: %(tf)s" % {'tf':tmp_path}
+	for line in open(createpath).readlines():
+		f.write(line.replace("${db}",db))
 
-# ~~~~~~~~~~~~~~~~~~~~~~ Runs the database creation script
-def create():
-	try:
-		# The format string for running commands through a file
+	f.close()
+	
+	return tmp_path
+	
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Runs the creation script
+def runCreateScript(createpath, createname):
 		db_format_string = readConf('migrate.module.file.format')
-		
-		if application_path:
-			createpath = os.path.join(application_path, 'db/migrate/create.sql')
-			if not os.path.exists(createpath):
-				print "~ "
-				print "~ Unable to find create script"
-				print "~	Please place your database creation script in db/migrate/create.sql"
-				print "~ "
-				sys.exit(-1)
-		else:
-			print "~ Unable to find create script"
-			sys.exit(-1)		
-		
 		db_commands = getCommandStrings()
 		db_commands['filename'] = createpath
 		db_commands['dbname'] = ""
 
 		db_create_cmd = db_format_string %db_commands
 			
-		print "~ Running create.sql script..."
+		print "~ Running script %(cs)s..." % {'cs': createname}
 				
 		[code,response] = runDBCommand(db_create_cmd)
 		if code <> 0:
@@ -193,6 +205,46 @@ def create():
 			print "~ Check your credentials and your script syntax and try again"
 			print "~ "
 			sys.exit(-1)
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~ Runs the database creation script
+def create():
+	try:
+		is_generic = False
+		
+		if application_path:
+			createpath = os.path.join(application_path, 'db/migrate/generic_create.sql')
+			if not os.path.exists(createpath):
+				createpath = os.path.join(application_path, 'db/migrate/create.sql')
+				if not os.path.exists(createpath):
+					print "~ "
+					print "~ Unable to find create script"
+					print "~	Please place your database creation script in db/migrate/create.sql or db/migrate/generic_create.sql"
+					print "~ "
+					sys.exit(-1)
+			else:
+				is_generic = True
+		else:
+			print "~ Unable to find create script"
+			sys.exit(-1)
+			
+		if is_generic:
+			print "~ Using generic create script, replacing parameter ${db} with each database name..."
+			print "~ "
+			db_list = readConf('migrate.module.dbs').split(',')
+			
+			for db in db_list:
+				# Extract the database name, trimming any whitespace.
+				[db, db_alias, db_alias_name] = extractDatabaseAndAlias(db)
+				print "~ Database: %(db)s" % {'db': db}
+				
+				# interpolate the generic file to contain the database name.
+				interpolated = interpolateDBFile(db, createpath)
+				# run the interpolated creation script
+				runCreateScript(interpolated,'generic_created.sql (%(db)s)' % {'db': db})
+		else:
+			# Run the create script
+			runCreateScript(createpath, 'create.sql')
 			
 	except getopt.GetoptError, err:
 		print "~ %s" % str(err)
@@ -200,7 +252,7 @@ def create():
 		sys.exit(-1)
 	
 	print "~ "
-	print "~ Database creation script completed."
+	print "~ Database creation script(s) completed."
 	print "~ "
 	
 	
@@ -215,11 +267,14 @@ def up():
 	print "~ Database migration:"
 	print "~ "
 	for db in db_list:
-		print "~	Database: %(db)s" % {'db':db}
+		# Extract the database name, trimming any whitespace.
+		[db, db_alias, db_alias_name] = extractDatabaseAndAlias(db)
+		
+		print "~	Database: %(db)s (Alias:%(alias)s)" % {'db':db, 'alias': db_alias_name }
 		[version,status] = getVersion(db)
 		print "~	Version: %(version)s" % {'version': version}
 		print "~	Status: %(status)s" % {'status': status}
-		[maxindex, files_obj] = getMigrateFiles(db,int(version))
+		[maxindex, files_obj] = getMigrateFiles(db_alias,int(version))
 		print "~	Max patch version: " + str(maxindex)
 		print "~ "
 		if maxindex <= int(version):
@@ -261,16 +316,18 @@ def dropAll():
 	print "~ "
 	print "~ Dropping databases..."
 	for db in db_list:
+		[db, db_alias, db_alias_name] = extractDatabaseAndAlias(db)
+		
 		print "~	drop %(db)s" % {'db':db}
 		[tmp_path,f] = createTempFile('migrate.module/drop_db.sql')
-		f.write("drop database %(db)s;" %{ 'db':db })
+		f.write("drop database if exists %(db)s;" %{ 'db':db })
 		f.close()
 		
 		# The format string for running commands through a file
 		db_format_string = readConf('migrate.module.file.format')
 		command_strings = getCommandStrings()
 		command_strings['filename'] = tmp_path
-		command_strings['dbname'] = db
+		command_strings['dbname'] = ""
 		db_cmd = db_format_string % command_strings
 		
 		[code, response] = runDBCommand(db_cmd)

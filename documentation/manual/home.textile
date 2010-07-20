@@ -15,7 +15,7 @@ h3. <a>Migrate vs. jpa.ddl=update</a>
 
 In addition to enabling the migrate module, you might want to consider check your **jpa.ddl** configuration setting and make sure it is set to either **jpa.ddl=validate** or **jpa.ddl=none**; otherwise, JPA will modify your database schema based on your models.
 
-Generally, if you're just at the start of a project, it's probably best to just use the **jpa.ddl=update** setting and not bother with the migrate module.  However, migrate really offers a lot of advantages over **jpa.ddl* once your project matures a little (e.g., populating your database with metadata, transforming existing operational data into new structures, etc.)  
+Generally, if you're just at the start of a project, it's probably best to just use the **jpa.ddl=update** setting and not bother with the migrate module.  However, migrate really offers a lot of advantages over **jpa.ddl** once your project matures a little (e.g., populating your database with metadata, transforming existing operational data into new structures, etc.)  
 
 h2. <a>Configuration</a>
 
@@ -84,10 +84,37 @@ The patch scripts identify a version number for their contents as well as the di
  
 NOTE: code to run 'down' patches is not implemented in this version of the migrate module!
 
- 
+h2. <a>Database Aliases - Multiple Databases with the Same Schema</a>
+
+Sometimes in development or maintenance of a web application, it is useful to create multiple copies of the same database; for example, an active development copy, a staging copy and a production copy.  Often these are hosted on separate machines, but in certain cases (like smaller projects) they are not.  Because the migration module uses the database name as the sub-folder name containing its patch files, it is a little difficult to simply change the name of the database the module creates and migrates.
+
+To overcome this issue, this version of the module (1.3 and higher) supports "aliases", which allow for the easy modification of the database name parameter, as well as simpler synchronized migration of multiple databases on the same machine.  To introduce this feature, let's start with our example database configuration:
+
+bc. # The comma delimited list of databases that migrate should update.
+migrate.module.dbs=db1,db2
+
+Now, suppose that we wish to split db1 into three synchronized databases: db1_dev, db1_staging and db1_prod.  In older migrate module versions, this would require us to maintain three copies of the same patch scripts--definitely not desirable.  With database aliases, we can now avoid unnecessary redundancy:
+
+bc. # The comma delimited list of databases that migrate should update.
+migrate.module.dbs=db1_dev[db1],db1_staging[db1],db1_prod[db1],db2
+  
+As you well may have guessed, each database is now an alias for the set of patch files located in 'db1'.  Thus, in this example 'db1' is more of a name we assign to the set of patch files, rather than the name of a database.  Note that if the alias syntax is NOT used, then the migrate module works just as it did before this new feature.
+
+WARNING!! With this format, it is extremely important that your patch files DO NOT contain any references to database / schema names.  If there are any such references, only the database explicitly referred to will be modified.
+
+h2. <a>Generic Creation Script Interpolation</a>
+
+If you've used the migration module before with multiple databases, you may have observed something annoying about the 'create.sql' script: duplicated code.  For each database, you essentially run the same commands: create the database by name, and then add the patchlevel table to it.  
+
+To avoid this unnecessary duplication version 1.3 and higher of the migrate module supports a **generic creation script**, which is run and interpolated for each database defined in the module's 'migrate.module.dbs' configuration.
+
+If the 'generic_create.sql' file is present in the db/migrate folder, it's contents will be executed for each database registered with the module.  Within this file the string '${db}' is replaced with the name of the database being operated upon.
+
+If the 'generic_create.sql' file is NOT present, the normal 'create.sql' file will be run when a 'play migrate:create' is run and this feature is not activated.   
+
 h2. <a>Running the patch files</a>
 
-To run your database creation script, use the **play migrate:create** command.  This just runs the __create.sql__ script.
+To run your database creation script, use the **play migrate:create** command.  This just runs the __create.sql__ or interpolated __generic_create.sql__ script (depending on configuration).
 
 To bring your database(s) to their most recent patch version(s), use the **play migrate:up** command.
 
