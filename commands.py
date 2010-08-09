@@ -3,6 +3,17 @@ import re
 
 # Migrate - database migration and creation
 
+def getDbArg():
+	grab_next = False
+	for arg in sys.argv:
+		if arg.startswith("--db"):
+			grab_next = True
+		elif grab_next == True:
+			print "~   Processing specified database: " + arg
+			return arg
+	
+	return None
+
 # ~~~~~~~~~~~~~~~~~~~~~~ getVersion(dbname) is to look up the version number of the database
 def getVersion(dbname):
 	[tmp_path,f] = createTempFile('migrate.module/check_version.sql')
@@ -232,10 +243,16 @@ def create():
 			print "~ Using generic create script, replacing parameter ${db} with each database name..."
 			print "~ "
 			db_list = readConf('migrate.module.dbs').split(',')
+			db_arg = getDbArg()
 			
 			for db in db_list:
 				# Extract the database name, trimming any whitespace.
 				[db, db_alias, db_alias_name] = extractDatabaseAndAlias(db)
+				
+				# Skip the database if a specified was given
+				if db_arg != None and db != db_arg:
+					continue
+			
 				print "~ Database: %(db)s" % {'db': db}
 				
 				# interpolate the generic file to contain the database name.
@@ -264,12 +281,19 @@ def up():
 	# Find the databases to iterat
 	db_list = readConf('migrate.module.dbs').split(',')
 	
+	db_arg = getDbArg()
+	
 	print "~ Database migration:"
 	print "~ "
 	for db in db_list:
+		
 		# Extract the database name, trimming any whitespace.
 		[db, db_alias, db_alias_name] = extractDatabaseAndAlias(db)
 		
+		# Skip the database if a specified was given
+		if db_arg != None and db != db_arg:
+			continue
+	
 		print "~	Database: %(db)s (Alias:%(alias)s)" % {'db':db, 'alias': db_alias_name }
 		[version,status] = getVersion(db)
 		print "~	Version: %(version)s" % {'version': version}
@@ -313,11 +337,18 @@ def up():
 # ~~~~~~~~~~~~~~~~~~~~~~ Drops all databases
 def dropAll():
 	db_list = readConf('migrate.module.dbs').split(',')
+	db_arg = getDbArg()
+	
 	print "~ "
 	print "~ Dropping databases..."
 	for db in db_list:
+	
 		[db, db_alias, db_alias_name] = extractDatabaseAndAlias(db)
 		
+		# Skip the database if a specified was given
+		if db_arg != None and db != db_arg:
+			continue
+	
 		print "~	drop %(db)s" % {'db':db}
 		[tmp_path,f] = createTempFile('migrate.module/drop_db.sql')
 		f.write("drop database if exists %(db)s;" %{ 'db':db })
@@ -351,9 +382,17 @@ if play_command == 'migrate:up':
 # ~~~~~~~~~~~~~~~~~~~~~~ [migrate:version] Output the current version(s) of the datbase(s)
 if play_command == 'migrate:version':
 	db_list = readConf('migrate.module.dbs').split(',')
+	db_arg = getDbArg()
+
 	print "~ Database version check:"
 	print "~ "
 	for db in db_list:
+		[db, db_alias, db_alias_name] = extractDatabaseAndAlias(db)
+		
+		# Skip the database if a specified was given
+		if db_arg != None and db != db_arg:
+			continue
+	
 		[version, status] = getVersion(db)
 		format = "%(dbname)-20s version %(version)s, status: %(status)s" % {'dbname':db, 'version':version, 'status': status}
 		print "~ " + format 
@@ -383,6 +422,8 @@ if play_command.startswith('migrate:'):
 	print "~	  migrate:version to read the current version of the database" 
 	print "~	  migrate:init to set up some initial database migration files" 
 	print "~	  migrate:drop-rebuild to drop and then rebuild all databases (use with caution!)"
+	print "~  "
+	print "~ Add --db={database name} to any command to only affect that database"
 	print "~ "
 	
 	sys.exit(0)

@@ -97,7 +97,8 @@ Now, suppose that we wish to split db1 into three synchronized databases: db1_de
 
 bc. # The comma delimited list of databases that migrate should update.
 migrate.module.dbs=db1_dev[db1],db1_staging[db1],db1_prod[db1],db2
-  
+
+
 As you well may have guessed, each database is now an alias for the set of patch files located in 'db1'.  Thus, in this example 'db1' is more of a name we assign to the set of patch files, rather than the name of a database.  Note that if the alias syntax is NOT used, then the migrate module works just as it did before this new feature.
 
 WARNING!! With this format, it is extremely important that your patch files DO NOT contain any references to database / schema names.  If there are any such references, only the database explicitly referred to will be modified.
@@ -114,7 +115,7 @@ If the 'generic_create.sql' file is NOT present, the normal 'create.sql' file wi
 
 h2. <a>Running the patch files</a>
 
-To run your database creation script, use the **play migrate:create** command.  This just runs the __create.sql__ or interpolated __generic_create.sql__ script (depending on configuration).
+To run your database creation script, use the **play migrate:create** command.  This just runs the __create.sql__ or interpolated _generic_create.sql_ script (depending on configuration).
 
 To bring your database(s) to their most recent patch version(s), use the **play migrate:up** command.
 
@@ -129,3 +130,5 @@ h2. <a>Other commands</a>
 You can see your database(s) current version number(s) and status(es) with the **play migrate:version** command.
 
 You can create a skeleton directory structure (with example files) with the **play migrate:init** command.
+
+You can run any of the commands on just one database by adding '--db=[database name]' as an additional argument to the command.
