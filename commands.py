@@ -6,12 +6,30 @@ import re
 def getDbArg():
 	grab_next = False
 	for arg in sys.argv:
-		if arg.startswith("--db"):
+		if arg.strip() == "--db":
 			grab_next = True
-		elif grab_next == True:
-			print "~   Processing specified database: " + arg
-			return arg
+		elif arg.startswith("--db=") or grab_next == True:
+			spec_db = arg.replace("--db","")
+			print "~ Processing specified database: " + spec_db
+			return spec_db
+
+	return None
 	
+# ~~~~~~~~~~~~~~~~~~~~~~ getUpToVersion() is to look up the desired migration version number, to which we'd like to migrate
+def getUpToVersion():
+	grab_next = False
+	for arg in sys.argv:
+		if arg.strip() == "--to":
+			grab_next = True
+		elif arg.startswith("--to=") or grab_next == True:
+			try:
+				to_version = int(arg.replace("--to=",""))
+				print "~ Migrating to version: %(tv)s" % {'tv': to_version}
+				return to_version
+			except TypeError:
+				print "~   ERROR: unable to parse --to argument: '%(ta)s'" % { 'ta': arg }
+				return None
+
 	return None
 
 # ~~~~~~~~~~~~~~~~~~~~~~ getVersion(dbname) is to look up the version number of the database
@@ -283,6 +301,8 @@ def up():
 	
 	db_arg = getDbArg()
 	
+	to_version = getUpToVersion()
+	
 	print "~ Database migration:"
 	print "~ "
 	for db in db_list:
@@ -308,7 +328,9 @@ def up():
 			continue
 		print "~	Migrating..."
 		command_strings = getCommandStrings()
-		for i in range(int(version) + 1, maxindex + 1):
+		if to_version == None or to_version > maxindex:
+			to_version = maxindex
+		for i in range(int(version) + 1, to_version + 1):
 			# Skip missed files
 			if files_obj[i] == None:
 				print "~	  Patch " + str(i) + " is missing...skipped"
@@ -424,6 +446,7 @@ if play_command.startswith('migrate:'):
 	print "~	  migrate:drop-rebuild to drop and then rebuild all databases (use with caution!)"
 	print "~  "
 	print "~ Add --db={database name} to any command to only affect that database"
+	print "~ Add --to={version number} to any command to only migrate to the specified version number"
 	print "~ "
 	
 	sys.exit(0)

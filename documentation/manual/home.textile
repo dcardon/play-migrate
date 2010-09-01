@@ -132,3 +132,5 @@ You can see your database(s) current version number(s) and status(es) with the *
 You can create a skeleton directory structure (with example files) with the **play migrate:init** command.
 
 You can run any of the commands on just one database by adding '--db=[database name]' as an additional argument to the command.
+
+You can specify a database version to migrate to by adding 'to=[version number]' as an additional argument to the command.
