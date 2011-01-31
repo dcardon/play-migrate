@@ -282,6 +282,7 @@ def create():
             db_arg = getDbArg()
             
             for db in db_list:
+                db = db.trim()
                 # Extract the database name, trimming any whitespace.
                 [db, db_alias, db_alias_name] = extractDatabaseAndAlias(db)
                 
