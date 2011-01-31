@@ -46,16 +46,20 @@ In order to run database modifications, the module uses command line tools to ex
 
 The command line is different for each particular database, so the module uses a format string as a template for the command.  The example configuration lines show the template for MySQL and PostgreSQL databases. 
 
-bc. # db.module.file.format is used to run commands directly from a file via the command-line 
+bc. # migrate.module.file.format is used to run commands directly from a file via the command-line 
 # on a database.  This format is populated with the appropriate fields in order to perform
 # creation and migration scripts on the database.
 #
 # The MySQL version: 
-# db.module.file.format=mysql -u%(username)s --password=%(password)s -h %(host)s -P%(port)s --skip-column-names %(dbname)s < %(filename)s
+# migrate.module.file.format=mysql -u%(username)s --password=%(password)s -h %(host)s -P%(port)s --skip-column-names %(dbname)s < %(filename)s
 # The PostgreSQL version:
-# db.module.file.format=psql -U %(username)s -h %(host)s -P%(port)s -t -d %(dbname)s -f %(filename)s
+# migrate.module.file.format=psql -U %(username)s -h %(host)s -P%(port)s -t -d %(dbname)s -f %(filename)s
 
 Make sure that the command (i.e., 'mysql' or 'psql') is available on your system's path or the module will encounter errors.
+
+'''NOTE:''' Play version 1.1 has issues parsing configuration properties with multiple '=' symbols in the line.  As a result, the mysql file format will NOT work.  I've coded a workaround into the migrate module, which replaces the string '[[eq]]' with an equals symbol.  Therefore, in 1.1 the MySQL format string should read:
+
+bc. migrate.module.file.format=mysql -u%(username)s --password[[eq]]%(password)s -h %(host)s -P%(port)s --skip-column-names %(dbname)s < %(filename)s
 
 h2. <a>Writing patch files</a>
 
@@ -82,7 +86,7 @@ The **create.sql** file contains the instructions to create all of your database
  
 The patch scripts identify a version number for their contents as well as the direction of the patch.  The **up** patches are used to bring the database version from its previous version up to the version of the patch (e.g., if the database's current version is 12, patch 13.up.xxx.sql will bring the database to version 13).  The **down** patches remove the changes of the corresponding __up__ patch, bringing the database to the previous version.  
  
-NOTE: code to run 'down' patches is not implemented in this version of the migrate module!
+NOTE: code to run 'down' patches is not implemented in this version of the migrate module!  However, this feature has not proven very useful in practice, while migrating up is definitely vital.
 
 h2. <a>Database Aliases - Multiple Databases with the Same Schema</a>
 
@@ -115,7 +119,7 @@ If the 'generic_create.sql' file is NOT present, the normal 'create.sql' file wi
 
 h2. <a>Running the patch files</a>
 
-To run your database creation script, use the **play migrate:create** command.  This just runs the __create.sql__ or interpolated _generic_create.sql_ script (depending on configuration).
+To run your database creation script, use the **play migrate:create** command.  This just runs the __create.sql__ or interpolated __generic_create.sql__ script (depending on configuration).
 
 To bring your database(s) to their most recent patch version(s), use the **play migrate:up** command.
 
@@ -131,6 +135,4 @@ You can see your database(s) current version number(s) and status(es) with the *
 
 You can create a skeleton directory structure (with example files) with the **play migrate:init** command.
 
-You can run any of the commands on just one database by adding '--db=[database name]' as an additional argument to the command.
-
-You can specify a database version to migrate to by adding 'to=[version number]' as an additional argument to the command.
+You can just drop all of your databases with the **play migrate:drop** command.
