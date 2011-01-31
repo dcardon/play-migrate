@@ -150,7 +150,7 @@ def runDBCommand(command):
 # ~~~~~~~~~~~~~~~~~~~~~~ Retrieves the list of migration files for the specified database.  The files live in the
 # ~~~~~~~~~~~~~~~~~~~~~~ {playapp}/db/migrate/{dbname} folder and follow a naming convention: {number}.{up|down}.{whatever}.sql
 def getMigrateFiles(dbname, exclude_before):
-    search_path = os.path.join(app.path, 'db/migrate/',dbname + '/*up*.sql')
+    search_path = os.path.join(app.path, 'db/migrate/',dbname + '/\d+.up*.sql')
 
     initial_list = glob.glob(search_path)
     return_obj = {}
@@ -282,7 +282,7 @@ def create():
             db_arg = getDbArg()
             
             for db in db_list:
-                db = db.trim()
+                db = db.strip()
                 # Extract the database name, trimming any whitespace.
                 [db, db_alias, db_alias_name] = extractDatabaseAndAlias(db)
                 
