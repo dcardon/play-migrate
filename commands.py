@@ -133,7 +133,7 @@ def runDBCommand(command):
     returncode = None
     line = ""
     try:
-        create_process = subprocess.Popen(command, env=os.environ, shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+        create_process = subprocess.Popen(command, env=os.environ, shell=True, stdout=subprocess.PIPE)
         while True:
             returncode = create_process.poll()
             line += create_process.stdout.readline()     
