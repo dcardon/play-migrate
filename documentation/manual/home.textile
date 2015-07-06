@@ -53,7 +53,7 @@ bc. # migrate.module.file.format is used to run commands directly from a file vi
 # The MySQL version: 
 # migrate.module.file.format=mysql -u%(username)s --password=%(password)s -h %(host)s -P%(port)s --skip-column-names %(dbname)s < %(filename)s
 # The PostgreSQL version:
-# migrate.module.file.format=psql -U %(username)s -h %(host)s -P%(port)s -t -d %(dbname)s -f %(filename)s
+# migrate.module.file.format=psql -U %(username)s -h %(host)s -P%(port)s --set=ON_ERROR_STOP=on -t -d %(dbname)s -f %(filename)s
 
 Make sure that the command (i.e., 'mysql' or 'psql') is available on your system's path or the module will encounter errors.
 
